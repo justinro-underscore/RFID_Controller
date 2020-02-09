@@ -1,9 +1,21 @@
 import time
 import pygame
 import random
+import sys
+from rfid_receiver import data, get_serial, run_receiver_exposed
 
-pygame.mixer.pre_init(44100, -16, 1, 512)
-pygame.mixer.init()
+rfid_mode = True
+if len(sys.argv) > 1:
+    if sys.argv[1] == "--mode=RFID":
+        pass
+    elif sys.argv[1] == "--mode=Keyboard":
+        rfid_mode = False
+    else:
+        print("Invalid arguments, use --mode=[RFID|Keyboard]")
+        exit()
+
+# pygame.mixer.pre_init(44100, -16, 1, 64)
+# pygame.mixer.init()
 pygame.init()
 
 gameState = True
@@ -13,16 +25,16 @@ BALL_RAD = 20
 PLAYER_L = 120
 PLAYER_W = 20
 PLAYER_OFFSET = 30
-PLAYER_SPEED = 4
+PLAYER_SPEED = 14 if rfid_mode else 4
 PLAYER1_SPEED = 0
 PLAYER2_SPEED = 0
 
 PLAYER1_POS = WIDTH//2
 PLAYER2_POS = WIDTH//2
 BALL_POS = [WIDTH/2, LENGTH/2]
-STARTING_BALL_VEL = [2, 1]
+STARTING_BALL_VEL = [8, 8] if rfid_mode else [1, 1]
 BALL_VEL = list(STARTING_BALL_VEL)
-BALL_HIT_VAL = 1.3
+BALL_HIT_VAL = 1.2
 LAST_WINNER = 0
 SCOREBOARD_LENGTH = 50
 SCORES = [0, 0]
@@ -33,8 +45,8 @@ gameDisplay = pygame.display.set_mode((WIDTH,LENGTH))
 pygame.display.set_caption('The best pong game ever')
 logo = pygame.image.load('download.png')
 pygame.display.set_icon(logo)
-BOOP = pygame.mixer.Sound('Boop.wav')
-HIGH_BOOP = pygame.mixer.Sound('HighBoop.wav')
+# BOOP = pygame.mixer.Sound('Boop.wav')
+# HIGH_BOOP = pygame.mixer.Sound('HighBoop.wav')
 
 #colors
 WHITE = (255,255,255)
@@ -42,17 +54,23 @@ BLACK = (0,0,0)
 RED = (255,0,0)
 BLUE = (0,0,255)
 
-def keydown(event):
+def move_players():
     global PLAYER1_SPEED, PLAYER2_SPEED 
-    if event.key == pygame.K_UP:
-        PLAYER2_SPEED = -PLAYER_SPEED
-    elif event.key == pygame.K_DOWN:
-        PLAYER2_SPEED = PLAYER_SPEED
-    elif event.key == pygame.K_w:
-        PLAYER1_SPEED = -PLAYER_SPEED
-    elif event.key == pygame.K_s:
-        PLAYER1_SPEED = PLAYER_SPEED
-    elif event.key == pygame.K_ESCAPE:
+    PLAYER1_SPEED = data["player_input"][0] * PLAYER_SPEED
+    PLAYER2_SPEED = data["player_input"][1] * PLAYER_SPEED
+
+def keydown(event):
+    global PLAYER1_SPEED, PLAYER2_SPEED
+    if not rfid_mode: 
+        if event.key == pygame.K_UP:
+            PLAYER2_SPEED = -PLAYER_SPEED
+        elif event.key == pygame.K_DOWN:
+            PLAYER2_SPEED = PLAYER_SPEED
+        elif event.key == pygame.K_w:
+            PLAYER1_SPEED = -PLAYER_SPEED
+        elif event.key == pygame.K_s:
+            PLAYER1_SPEED = PLAYER_SPEED
+    if event.key == pygame.K_ESCAPE:
         exit()
     elif event.key == pygame.K_SPACE:
         return True
@@ -81,7 +99,7 @@ def init_game():
 
 def draw_board(display):
     #making some variables global should be better but "eh its a hackathon" - Justin
-    global BALL_POS, BALL_RAD, PLAYER1_POS, PLAYER_L, PLAYER_W, PLAYER1_SPEED, PLAYER2_POS, PLAYER2_SPEED
+    global BALL_POS, BALL_RAD, PLAYER1_POS, PLAYER_L, PLAYER_W, PLAYER1_SPEED, PLAYER2_POS, PLAYER2_SPEED, LAST_WINNER
     
     gameDisplay.fill(BLACK)
     pygame.draw.line(gameDisplay, WHITE, [WIDTH / 2, 0],[WIDTH / 2, LENGTH], 1)
@@ -129,25 +147,25 @@ def draw_board(display):
     
     finished = False
     if int(BALL_POS[0]) <= BALL_RAD + PLAYER_W and int(BALL_POS[1]) in range(int(PLAYER1_POS) - PLAYER_L//2 - PLAYER_OFFSET, int(PLAYER1_POS) + PLAYER_L//2 + PLAYER_OFFSET, 1):
-        BOOP.play()
+        # BOOP.play()
         BALL_VEL[0] = -BALL_VEL[0]
         BALL_VEL[0] *= BALL_HIT_VAL
         BALL_VEL[1] *= BALL_HIT_VAL
     elif int(BALL_POS[0]) <= BALL_RAD + PLAYER_W:
-        HIGH_BOOP.play()
-        SCORES[0] += 1
+        # HIGH_BOOP.play()
+        SCORES[1] += 1
         LAST_WINNER = 0
         finished = finished or checkScore()
         init_game()
     
     if int(BALL_POS[0]) >= WIDTH - BALL_RAD - PLAYER_W and int(BALL_POS[1]) in range(int(PLAYER2_POS) - PLAYER_L//2 - PLAYER_OFFSET, int(PLAYER2_POS) + PLAYER_L//2 + PLAYER_OFFSET, 1):
-        BOOP.play()
+        # BOOP.play()
         BALL_VEL[0] = -BALL_VEL[0]
         BALL_VEL[0] *= BALL_HIT_VAL
         BALL_VEL[1] *= BALL_HIT_VAL
     elif int(BALL_POS[0]) >= WIDTH - BALL_RAD - PLAYER_W:
-        HIGH_BOOP.play()
-        SCORES[1] += 1
+        # HIGH_BOOP.play()
+        SCORES[0] += 1
         LAST_WINNER = 1
         finished = finished or checkScore()
         init_game()
@@ -172,13 +190,20 @@ def draw_board(display):
             gameDisplay.blit(pygame.font.SysFont("Monospace", 120).render(c, 1, RED if (i + whitespace_num) % 2 == 0 else BLUE), (starting_pos_x + (i * size_of_char), pos_y - 20))
     return finished
 
-
 #game event loop
+if rfid_mode:
+    ser = get_serial()
 init_game()
 
 finished = False
-paused = False
+paused = rfid_mode
+if rfid_mode:
+    print("Calibrate inputs:")
 while gameState:
+    if rfid_mode and not finished:
+        run_receiver_exposed(ser)
+        move_players()
+
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
             to_be_paused = keydown(event)
