@@ -52,6 +52,11 @@ def keydown(event):
         PLAYER1_SPEED = -PLAYER_SPEED
     elif event.key == pygame.K_s:
         PLAYER1_SPEED = PLAYER_SPEED
+    elif event.key == pygame.K_ESCAPE:
+        exit()
+    elif event.key == pygame.K_SPACE:
+        return True
+    return False
 
 def keyup(event):
     global PLAYER1_SPEED, PLAYER2_SPEED
@@ -172,17 +177,22 @@ def draw_board(display):
 init_game()
 
 finished = False
+paused = False
 while gameState:
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
-            keydown(event)
+            to_be_paused = keydown(event)
+            if not finished and not paused and to_be_paused:
+                paused = True
+            elif paused and to_be_paused:
+                paused = False
         elif event.type == pygame.KEYUP:
             keyup(event)
         elif event.type == pygame.QUIT:
             pygame.quit()
             exit()
 
-    if not finished:
+    if not finished and not paused:
         finished = draw_board(gameDisplay)
 
         pygame.display.update()
