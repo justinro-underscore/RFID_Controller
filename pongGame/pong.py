@@ -2,6 +2,8 @@ import time
 import pygame
 import random
 
+pygame.mixer.pre_init(44100, -16, 1, 512)
+pygame.mixer.init()
 pygame.init()
 
 gameState = True
@@ -31,7 +33,8 @@ gameDisplay = pygame.display.set_mode((WIDTH,LENGTH))
 pygame.display.set_caption('The best pong game ever')
 logo = pygame.image.load('download.png')
 pygame.display.set_icon(logo)
-pygame.mixer.music.load('Boop.wav')
+BOOP = pygame.mixer.Sound('Boop.wav')
+HIGH_BOOP = pygame.mixer.Sound('HighBoop.wav')
 
 #colors
 WHITE = (255,255,255)
@@ -121,23 +124,25 @@ def draw_board(display):
     
     finished = False
     if int(BALL_POS[0]) <= BALL_RAD + PLAYER_W and int(BALL_POS[1]) in range(int(PLAYER1_POS) - PLAYER_L//2 - PLAYER_OFFSET, int(PLAYER1_POS) + PLAYER_L//2 + PLAYER_OFFSET, 1):
-        pygame.mixer.music.play(0)
+        BOOP.play()
         BALL_VEL[0] = -BALL_VEL[0]
         BALL_VEL[0] *= BALL_HIT_VAL
         BALL_VEL[1] *= BALL_HIT_VAL
     elif int(BALL_POS[0]) <= BALL_RAD + PLAYER_W:
-        pygame.mixer.music.play(0)
+        HIGH_BOOP.play()
+        SCORES[0] += 1
         LAST_WINNER = 0
         finished = finished or checkScore()
         init_game()
     
     if int(BALL_POS[0]) >= WIDTH - BALL_RAD - PLAYER_W and int(BALL_POS[1]) in range(int(PLAYER2_POS) - PLAYER_L//2 - PLAYER_OFFSET, int(PLAYER2_POS) + PLAYER_L//2 + PLAYER_OFFSET, 1):
-        pygame.mixer.music.play(0)
+        BOOP.play()
         BALL_VEL[0] = -BALL_VEL[0]
         BALL_VEL[0] *= BALL_HIT_VAL
         BALL_VEL[1] *= BALL_HIT_VAL
     elif int(BALL_POS[0]) >= WIDTH - BALL_RAD - PLAYER_W:
-        SCORES[0] += 1
+        HIGH_BOOP.play()
+        SCORES[1] += 1
         LAST_WINNER = 1
         finished = finished or checkScore()
         init_game()
