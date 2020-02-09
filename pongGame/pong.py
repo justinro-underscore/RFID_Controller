@@ -5,17 +5,23 @@ import random
 pygame.init()
 
 gameState = True
-WIDTH = 500
-LENGTH = 500
+WIDTH = 1000
+LENGTH = 800
 BALL_RAD = 20
-PLAYER_L = 80
+PLAYER_L = 120
 PLAYER_W = 20
+PLAYER_OFFSET = 30
+PLAYER_SPEED = 4
 PLAYER1_SPEED = 0
 PLAYER2_SPEED = 0
+
 PLAYER1_POS = WIDTH//2
 PLAYER2_POS = WIDTH//2
 BALL_POS = [WIDTH/2, LENGTH/2]
-BALL_VEL = [4, 4]
+STARTING_BALL_VEL = [1, 1]
+BALL_VEL = list(STARTING_BALL_VEL)
+BALL_HIT_VAL = 1.3
+LAST_WINNER = 0
 SCOREBOARD_LENGTH = 50
 SCORES = [0, 0]
 
@@ -29,17 +35,19 @@ pygame.display.set_icon(logo)
 #colors
 WHITE = (255,255,255)
 BLACK = (0,0,0)
+RED = (255,0,0)
+BLUE = (0,0,255)
 
 def keydown(event):
     global PLAYER1_SPEED, PLAYER2_SPEED 
     if event.key == pygame.K_UP:
-        PLAYER2_SPEED = -8
+        PLAYER2_SPEED = -PLAYER_SPEED
     elif event.key == pygame.K_DOWN:
-        PLAYER2_SPEED = 8
+        PLAYER2_SPEED = PLAYER_SPEED
     elif event.key == pygame.K_w:
-        PLAYER1_SPEED = -8
+        PLAYER1_SPEED = -PLAYER_SPEED
     elif event.key == pygame.K_s:
-        PLAYER1_SPEED = 8
+        PLAYER1_SPEED = PLAYER_SPEED
 
 def keyup(event):
     global PLAYER1_SPEED, PLAYER2_SPEED
@@ -52,14 +60,15 @@ def keyup(event):
 def checkScore():
     for score in enumerate(SCORES):
         if score[1] >= 7:
-            for i in range(100):
-                print('player {} won!'.format(score[0]))
-            exit()
+            return True
+    return False
 
 
 def init_game():
-    BALL_POS[0] = int((random.random() * (WIDTH - 40)) + 20)
+    BALL_POS[0] = (WIDTH // 2) + int((1 * 160) - 80)
     BALL_POS[1] = int(random.random() * (LENGTH - SCOREBOARD_LENGTH))
+    BALL_VEL[0] = (-1 if LAST_WINNER == 0 else 1) * STARTING_BALL_VEL[0]
+    BALL_VEL[1] = (1 if (PLAYER1_POS if LAST_WINNER == 0 else PLAYER2_POS) > (LENGTH // 2) else -1) * STARTING_BALL_VEL[1]
 
 def draw_board(display):
     #making some variables global should be better but "eh its a hackathon" - Justin
@@ -79,6 +88,10 @@ def draw_board(display):
         PLAYER1_POS += PLAYER1_SPEED
     elif PLAYER1_POS == LENGTH - PLAYER_L//2 and PLAYER1_SPEED < 0:
         PLAYER1_POS += PLAYER1_SPEED
+    if (PLAYER1_POS >= (LENGTH - (PLAYER_L // 2))):
+        PLAYER1_POS = LENGTH - (PLAYER_L // 2) - 1
+    elif (PLAYER1_POS <= (PLAYER_L // 2)):
+        PLAYER1_POS = (PLAYER_L // 2) + 1
 
     if PLAYER2_POS > PLAYER_L//2 and PLAYER2_POS < LENGTH - PLAYER_W//2:
         PLAYER2_POS += PLAYER2_SPEED
@@ -86,6 +99,10 @@ def draw_board(display):
         PLAYER2_POS += PLAYER2_SPEED
     elif PLAYER2_POS == LENGTH - PLAYER_L//2 and PLAYER2_SPEED < 0:
         PLAYER2_POS += PLAYER2_SPEED
+    if (PLAYER2_POS >= (LENGTH - (PLAYER_L // 2))):
+        PLAYER2_POS = LENGTH - (PLAYER_L // 2) - 1
+    elif (PLAYER2_POS <= (PLAYER_L // 2)):
+        PLAYER2_POS = (PLAYER_L // 2) + 1
 
     BALL_POS[0] += int(BALL_VEL[0])
     BALL_POS[1] += int(BALL_VEL[1])
@@ -101,30 +118,52 @@ def draw_board(display):
     if int(BALL_POS[1]) >= LENGTH - BALL_RAD:
         BALL_VEL[1] = -BALL_VEL[1]
     
-    if int(BALL_POS[0]) <= BALL_RAD + PLAYER_W and int(BALL_POS[1]) in range(int(PLAYER1_POS) - PLAYER_L//2, int(PLAYER1_POS) + PLAYER_L//2, 1):
+    finished = False
+    if int(BALL_POS[0]) <= BALL_RAD + PLAYER_W and int(BALL_POS[1]) in range(int(PLAYER1_POS) - PLAYER_L//2 - PLAYER_OFFSET, int(PLAYER1_POS) + PLAYER_L//2 + PLAYER_OFFSET, 1):
         BALL_VEL[0] = -BALL_VEL[0]
-        BALL_VEL[0] *= 1.1
-        BALL_VEL[1] *= 1.1
+        BALL_VEL[0] *= BALL_HIT_VAL
+        BALL_VEL[1] *= BALL_HIT_VAL
     elif int(BALL_POS[0]) <= BALL_RAD + PLAYER_W:
         SCORES[0] += 1
-        checkScore()
+        LAST_WINNER = 0
+        finished = finished or checkScore()
         init_game()
     
-    if int(BALL_POS[0]) >= WIDTH - BALL_RAD - PLAYER_W and int(BALL_POS[1]) in range(int(PLAYER2_POS) - PLAYER_L//2, int(PLAYER2_POS) + PLAYER_L//2, 1):
+    if int(BALL_POS[0]) >= WIDTH - BALL_RAD - PLAYER_W and int(BALL_POS[1]) in range(int(PLAYER2_POS) - PLAYER_L//2 - PLAYER_OFFSET, int(PLAYER2_POS) + PLAYER_L//2 + PLAYER_OFFSET, 1):
         BALL_VEL[0] = -BALL_VEL[0]
-        BALL_VEL[0] *= 1.1
-        BALL_VEL[1] *= 1.1
+        BALL_VEL[0] *= BALL_HIT_VAL
+        BALL_VEL[1] *= BALL_HIT_VAL
     elif int(BALL_POS[0]) >= WIDTH - BALL_RAD - PLAYER_W:
         SCORES[0] += 1
-        checkScore()
+        LAST_WINNER = 1
+        finished = finished or checkScore()
         init_game()
 
-    gameDisplay.blit(pygame.font.SysFont("Bernard MT", 30).render("Player 1: " + str(SCORES[0]), 1, WHITE), (50, 20))
-    gameDisplay.blit(pygame.font.SysFont("Bernard MT", 30).render("Player 2: " + str(SCORES[1]), 1, WHITE), (340, 20))
+    gameDisplay.blit(pygame.font.SysFont("Monospace", 40).render("Player 1: " + str(SCORES[0]), 1, WHITE), (120, 20))
+    gameDisplay.blit(pygame.font.SysFont("Monospace", 40).render("Player 2: " + str(SCORES[1]), 1, WHITE), (620, 20))
+
+    if finished:
+        winner = "Player {} wins!".format(1 if SCORES[0] > SCORES[1] else 2)
+        starting_pos_x = 100
+        pos_y = 430
+        offset = 10
+        size_of_char = 60
+        pygame.draw.polygon(gameDisplay, WHITE, [[starting_pos_x - offset, pos_y - offset],
+                                                 [starting_pos_x - offset, pos_y + size_of_char + 45 + offset],
+                                                 [starting_pos_x + (size_of_char * len(winner)) + offset, pos_y + size_of_char + 45 + offset],
+                                                 [starting_pos_x + (size_of_char * len(winner)) + offset, pos_y - offset]], 0)
+        whitespace_num = 0
+        for i, c in enumerate(winner):
+            if c == " ":
+                whitespace_num += 1
+            gameDisplay.blit(pygame.font.SysFont("Monospace", 120).render(c, 1, RED if (i + whitespace_num) % 2 == 0 else BLUE), (starting_pos_x + (i * size_of_char), pos_y - 20))
+    return finished
 
 
 #game event loop
 init_game()
+
+finished = False
 while gameState:
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
@@ -133,7 +172,9 @@ while gameState:
             keyup(event)
         elif event.type == pygame.QUIT:
             pygame.quit()
-            sys.exit()
-    draw_board(gameDisplay)
+            exit()
 
-    pygame.display.update()
+    if not finished:
+        finished = draw_board(gameDisplay)
+
+        pygame.display.update()
