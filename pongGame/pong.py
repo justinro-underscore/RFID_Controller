@@ -32,6 +32,7 @@ PLAYER2_SPEED = 0
 PLAYER1_POS = WIDTH//2
 PLAYER2_POS = WIDTH//2
 BALL_POS = [WIDTH/2, LENGTH/2]
+BALL_HIT_COUNT = 0
 STARTING_BALL_VEL = [8, 8] if rfid_mode else [1, 1]
 BALL_VEL = list(STARTING_BALL_VEL)
 BALL_HIT_VAL = 1.2
@@ -50,10 +51,11 @@ pygame.display.set_icon(logo)
 # HIGH_BOOP = pygame.mixer.Sound('HighBoop.wav')
 
 #colors
-WHITE = (255,255,255)
-BLACK = (0,0,0)
-RED = (255,0,0)
-BLUE = (0,0,255)
+WHITE = [255,255,255]
+BALL_COLOR = [255, 255, 255]
+BLACK = [0,0,0]
+RED = [255,0,0]
+BLUE = [0,0,255]
 
 def move_players():
     global PLAYER1_SPEED, PLAYER2_SPEED 
@@ -100,7 +102,7 @@ def init_game():
 
 def draw_board(display):
     #making some variables global should be better but "eh its a hackathon" - Justin
-    global BALL_POS, BALL_RAD, PLAYER1_POS, PLAYER_L, PLAYER_W, PLAYER1_SPEED, PLAYER2_POS, PLAYER2_SPEED, LAST_WINNER
+    global BALL_POS, BALL_RAD, PLAYER1_POS, PLAYER_L, PLAYER_W, PLAYER1_SPEED, PLAYER2_POS, PLAYER2_SPEED, LAST_WINNER, BALL_COLOR, BALL_HIT_COUNT
     
     gameDisplay.fill(BLACK)
     pygame.draw.line(gameDisplay, WHITE, [WIDTH / 2, 0],[WIDTH / 2, LENGTH], 1)
@@ -135,8 +137,7 @@ def draw_board(display):
     BALL_POS[0] += int(BALL_VEL[0])
     BALL_POS[1] += int(BALL_VEL[1])
 
-
-    pygame.draw.circle(gameDisplay, WHITE, BALL_POS, BALL_RAD)
+    pygame.draw.circle(gameDisplay, BALL_COLOR, BALL_POS, BALL_RAD)
     pygame.draw.polygon(gameDisplay, WHITE, [[0, PLAYER1_POS - PLAYER_L//2], [PLAYER_W, PLAYER1_POS - PLAYER_L//2], [PLAYER_W, PLAYER1_POS + PLAYER_L//2],  [0, PLAYER1_POS + PLAYER_L//2]], 0)
     pygame.draw.polygon(gameDisplay, WHITE, [[WIDTH - PLAYER_W, PLAYER2_POS - PLAYER_L//2], [WIDTH, PLAYER2_POS - PLAYER_L//2], [WIDTH, PLAYER2_POS + PLAYER_L//2], [WIDTH - PLAYER_W, PLAYER2_POS + PLAYER_L//2]], 0)
 
@@ -152,8 +153,14 @@ def draw_board(display):
         BALL_VEL[0] = -BALL_VEL[0]
         BALL_VEL[0] *= BALL_HIT_VAL
         BALL_VEL[1] *= BALL_HIT_VAL
+        BALL_HIT_COUNT += 1
+        if (BALL_HIT_COUNT > 3 and BALL_COLOR[1] > 5):
+            BALL_COLOR[1] -= 25
+            BALL_COLOR[2] -= 25
     elif int(BALL_POS[0]) <= BALL_RAD + PLAYER_W:
         # HIGH_BOOP.play()
+        BALL_HIT_COUNT = 0
+        BALL_COLOR = list(WHITE)
         SCORES[1] += 1
         LAST_WINNER = 0
         finished = finished or checkScore()
@@ -164,8 +171,14 @@ def draw_board(display):
         BALL_VEL[0] = -BALL_VEL[0]
         BALL_VEL[0] *= BALL_HIT_VAL
         BALL_VEL[1] *= BALL_HIT_VAL
+        BALL_HIT_COUNT += 1
+        if (BALL_HIT_COUNT > 3 and BALL_COLOR[1] > 5):
+            BALL_COLOR[1] -= 25
+            BALL_COLOR[2] -= 25
     elif int(BALL_POS[0]) >= WIDTH - BALL_RAD - PLAYER_W:
         # HIGH_BOOP.play()
+        BALL_HIT_COUNT = 0
+        BALL_COLOR = list(WHITE)
         SCORES[0] += 1
         LAST_WINNER = 1
         finished = finished or checkScore()
