@@ -100,16 +100,57 @@ def init_game():
     BALL_VEL[0] = (-1 if LAST_WINNER == 0 else 1) * STARTING_BALL_VEL[0]
     BALL_VEL[1] = (1 if (PLAYER1_POS if LAST_WINNER == 0 else PLAYER2_POS) > (LENGTH // 2) else -1) * STARTING_BALL_VEL[1]
 
-def draw_board(display):
-    #making some variables global should be better but "eh its a hackathon" - Justin
-    global BALL_POS, BALL_RAD, PLAYER1_POS, PLAYER_L, PLAYER_W, PLAYER1_SPEED, PLAYER2_POS, PLAYER2_SPEED, LAST_WINNER, BALL_COLOR, BALL_HIT_COUNT
-    
+def draw_splash_screen(display):
     gameDisplay.fill(BLACK)
     pygame.draw.line(gameDisplay, WHITE, [WIDTH / 2, 0],[WIDTH / 2, LENGTH], 1)
     pygame.draw.line(gameDisplay, WHITE, [PLAYER_W, 0],[PLAYER_W, LENGTH], 1)
     pygame.draw.line(gameDisplay, WHITE, [WIDTH - PLAYER_W, 0],[WIDTH - PLAYER_W, LENGTH], 1) 
     pygame.draw.line(gameDisplay, WHITE, [WIDTH / 2, 0],[WIDTH / 2, LENGTH], 1)
-    pygame.draw.circle(gameDisplay, WHITE, [WIDTH//2, LENGTH//2], 70, 1)  
+    pygame.draw.circle(gameDisplay, WHITE, [WIDTH//2, LENGTH//2], 70, 1)
+
+    pygame.draw.polygon(gameDisplay, WHITE, [[0, PLAYER1_POS - PLAYER_L//2], [PLAYER_W, PLAYER1_POS - PLAYER_L//2], [PLAYER_W, PLAYER1_POS + PLAYER_L//2],  [0, PLAYER1_POS + PLAYER_L//2]], 0)
+    pygame.draw.polygon(gameDisplay, WHITE, [[WIDTH - PLAYER_W, PLAYER2_POS - PLAYER_L//2], [WIDTH, PLAYER2_POS - PLAYER_L//2], [WIDTH, PLAYER2_POS + PLAYER_L//2], [WIDTH - PLAYER_W, PLAYER2_POS + PLAYER_L//2]], 0)
+
+    gameDisplay.blit(pygame.font.SysFont("Monospace", 40).render("Created by:", 1, WHITE), (120, 110))
+    gameDisplay.blit(pygame.font.SysFont("Monospace", 40).render("Justin Roderman", 1, WHITE), (570, 110))
+    gameDisplay.blit(pygame.font.SysFont("Monospace", 40).render("Ross Copeland", 1, WHITE), (100, 160))
+    gameDisplay.blit(pygame.font.SysFont("Monospace", 40).render("Varun Chadha", 1, WHITE), (600, 160))
+
+    title = "RFID PONG"
+    starting_pos_x = 200
+    pos_y = 345
+    offset = 20
+    size_of_char = 65
+    pygame.draw.polygon(gameDisplay, BLACK, [[starting_pos_x - offset, pos_y - offset],
+                                                [starting_pos_x - offset, pos_y + size_of_char + 45 + offset],
+                                                [starting_pos_x + (size_of_char * len(title)) + offset, pos_y + size_of_char + 45 + offset],
+                                                [starting_pos_x + (size_of_char * len(title)) + offset, pos_y - offset]], 0)
+    whitespace_num = 0
+    for i, c in enumerate(title):
+        if c == " ":
+            whitespace_num += 1
+        gameDisplay.blit(pygame.font.SysFont("Monospace", 120).render(c, 1, RED if (i + whitespace_num) % 2 == 0 else BLUE), (starting_pos_x + (i * size_of_char), pos_y - 20))
+
+    pygame.draw.polygon(gameDisplay, BLACK, [[240, 550 if rfid_mode else 590],
+                                             [760, 550 if rfid_mode else 590],
+                                             [760, 660],
+                                             [240, 660]], 0)
+    if rfid_mode:
+        gameDisplay.blit(pygame.font.SysFont("Monospace", 40).render("Calibrate Input,", 1, WHITE), (300, 550))
+        gameDisplay.blit(pygame.font.SysFont("Monospace", 40).render("then press Space to start!", 1, WHITE), (180, 600))
+    else:
+        gameDisplay.blit(pygame.font.SysFont("Monospace", 40).render("Press Space to start!", 1, WHITE), (240, 600))
+
+def draw_board(display):
+    #making some variables global should be better but "eh its a hackathon" - Justin
+    global BALL_POS, BALL_RAD, PLAYER1_POS, PLAYER_L, PLAYER_W, PLAYER1_SPEED, PLAYER2_POS, PLAYER2_SPEED, LAST_WINNER, BALL_COLOR, BALL_HIT_COUNT
+
+    gameDisplay.fill(BLACK)
+    pygame.draw.line(gameDisplay, WHITE, [WIDTH / 2, 0],[WIDTH / 2, LENGTH], 1)
+    pygame.draw.line(gameDisplay, WHITE, [PLAYER_W, 0],[PLAYER_W, LENGTH], 1)
+    pygame.draw.line(gameDisplay, WHITE, [WIDTH - PLAYER_W, 0],[WIDTH - PLAYER_W, LENGTH], 1) 
+    pygame.draw.line(gameDisplay, WHITE, [WIDTH / 2, 0],[WIDTH / 2, LENGTH], 1)
+    pygame.draw.circle(gameDisplay, WHITE, [WIDTH//2, LENGTH//2], 70, 1)
     
     #updating players position
     if (PLAYER1_POS > (PLAYER_L//2)) and (PLAYER1_POS < LENGTH - (PLAYER_W//2)):
@@ -210,7 +251,10 @@ if rfid_mode:
 init_game()
 
 finished = False
-paused = rfid_mode
+paused = True
+if paused:
+    draw_splash_screen(gameDisplay)
+    pygame.display.update()
 if rfid_mode:
     print("Calibrate inputs:")
 while gameState:
