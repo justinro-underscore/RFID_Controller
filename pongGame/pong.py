@@ -38,6 +38,7 @@ BALL_HIT_VAL = 1.2
 LAST_WINNER = 0
 SCOREBOARD_LENGTH = 50
 SCORES = [0, 0]
+WINS = 5
 
 gameDisplay = pygame.display.set_mode((WIDTH,LENGTH))
 
@@ -86,7 +87,7 @@ def keyup(event):
 
 def checkScore():
     for score in enumerate(SCORES):
-        if score[1] >= 7:
+        if score[1] >= WINS:
             return True
     return False
 
