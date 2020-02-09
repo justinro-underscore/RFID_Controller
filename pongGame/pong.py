@@ -18,7 +18,7 @@ PLAYER2_SPEED = 0
 PLAYER1_POS = WIDTH//2
 PLAYER2_POS = WIDTH//2
 BALL_POS = [WIDTH/2, LENGTH/2]
-STARTING_BALL_VEL = [1, 1]
+STARTING_BALL_VEL = [2, 1]
 BALL_VEL = list(STARTING_BALL_VEL)
 BALL_HIT_VAL = 1.3
 LAST_WINNER = 0
@@ -66,7 +66,7 @@ def checkScore():
 
 def init_game():
     BALL_POS[0] = (WIDTH // 2) + int((1 * 160) - 80)
-    BALL_POS[1] = int(random.random() * (LENGTH - SCOREBOARD_LENGTH))
+    BALL_POS[1] = int(1 * (LENGTH - 4 * (BALL_RAD)) + (2 * BALL_RAD))
     BALL_VEL[0] = (-1 if LAST_WINNER == 0 else 1) * STARTING_BALL_VEL[0]
     BALL_VEL[1] = (1 if (PLAYER1_POS if LAST_WINNER == 0 else PLAYER2_POS) > (LENGTH // 2) else -1) * STARTING_BALL_VEL[1]
 
@@ -124,7 +124,7 @@ def draw_board(display):
         BALL_VEL[0] *= BALL_HIT_VAL
         BALL_VEL[1] *= BALL_HIT_VAL
     elif int(BALL_POS[0]) <= BALL_RAD + PLAYER_W:
-        SCORES[0] += 1
+        SCORES[1] += 1
         LAST_WINNER = 0
         finished = finished or checkScore()
         init_game()
